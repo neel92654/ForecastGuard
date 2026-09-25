@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: forecastguard_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: forecastguard
+      POSTGRES_PASSWORD: forecastguard_password
+      POSTGRES_DB: forecastguard_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forecastguard -d forecastguard_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: forecastguard_backend
+    restart: unless-stopped
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEMO_MODE=true
+      - DATA_PROVIDER=demo
+      - BUST_PERCENTILE=90
+      - MIN_ERROR_THRESHOLD_MM=10.0
+      - MODEL_PATH=models/forecastguard_xgb_calibrated.joblib
+      - DATA_DIR=data
+      - DATABASE_URL=postgresql://forecastguard:forecastguard_password@postgres:5432/forecastguard_db
+      - CORS_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: forecastguard_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
