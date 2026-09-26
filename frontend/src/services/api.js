@@ -1,9 +1,23 @@
 /**
- * ForecastGuard API Client Service
- * Connects React frontend to FastAPI ML prediction endpoints.
+ * Resolve API base URL from Vite environment variable with robust normalization.
+ * Handles:
+ * - 'https://forecastguard-6xm3.onrender.com' -> 'https://forecastguard-6xm3.onrender.com/api'
+ * - 'https://forecastguard-6xm3.onrender.com/api' -> 'https://forecastguard-6xm3.onrender.com/api'
+ * - '' or undefined -> '/api' (proxied by Vite dev server / Nginx)
  */
+function getApiBaseUrl() {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+  if (!envUrl) {
+    return '/api';
+  }
+  const cleanUrl = envUrl.replace(/\/+$/, '');
+  if (!cleanUrl.endsWith('/api')) {
+    return `${cleanUrl}/api`;
+  }
+  return cleanUrl;
+}
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = getApiBaseUrl();
 
 export async function fetchHealth() {
   try {

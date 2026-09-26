@@ -56,7 +56,7 @@ export default function Dashboard() {
         }
       } catch (err) {
         if (isMounted) {
-          setError('Failed to compute forecast bust risk. Backend service may be unreachable.');
+          setError('Connecting to ForecastGuard backend... (If waking from idle, please allow ~15-20s and click Retry)');
         }
       } finally {
         if (isMounted) setIsLoading(false);
